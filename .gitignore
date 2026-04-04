@@ -1,0 +1,51 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+.venv/
+venv/
+env/
+ENV/
+
+# Environment variables
+.env
+.env.*
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# SQLite DB (if any)
+*.sqlite3
+
+# Pytest / cache
+.pytest_cache/
+.cache/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Uvicorn / FastAPI temp
+*.pid
+
+# Node (if frontend inside same repo)
+node_modules/
+
+# Mac/Linux temp
+*.swp
