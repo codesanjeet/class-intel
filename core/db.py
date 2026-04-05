@@ -18,7 +18,7 @@ DB_NAME = os.getenv("DB_NAME")
 
 
 # Encode the password for the URL
-encoded_password = quote_plus(DB_PASSWORD)
+# encoded_password = quote_plus(DB_PASSWORD)
 
 # DATABASE = f'postgresql+asyncpg://{DB_USER}:{encoded_password}@{DB_HOST}:{DB_PORT}/{DB_NAME}'
 DATABASE = os.getenv("DATABASE_URL")
