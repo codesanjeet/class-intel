@@ -3,16 +3,20 @@ import re
 from fastapi import FastAPI, UploadFile, File, Form
 from typing import Optional
 from dotenv import load_dotenv
-import google.generativeai as genai
 import os
 from PIL import Image
 import io
 from services.grading import generate_grading_response
 from fastapi.middleware.cors import CORSMiddleware
-
+from model.base import Base
+from core.db import engine 
+from routes.analytics import router as analytics_router  
+from routes.lesson import router as lession_router
 load_dotenv()
 
 app = FastAPI()
+app.include_router(analytics_router, tags=["analytics"])
+app.include_router(lession_router, tags=["lession"])
 
 origins = [
     "http://localhost:3000",   
@@ -27,8 +31,11 @@ app.add_middleware(
     allow_methods=["*"],          
     allow_headers=["*"],         
 )
+app.include_router(lession_router,  tags=["lession-generator"])
 
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
+async def init_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 
 def load_rules():
@@ -36,6 +43,11 @@ def load_rules():
         return file.read()
 
 rules = load_rules()
+
+# for intialization testing
+@app.on_event("startup")
+async def on_startup():
+    await init_db()
 
 @app.get("/")
 def read_root():
