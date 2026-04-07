@@ -1,11 +1,8 @@
 import json
 import re
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File, Form,HTTPException
 from typing import Optional
 from dotenv import load_dotenv
-import os
-from PIL import Image
-import io
 from services.grading import generate_grading_response
 from fastapi.middleware.cors import CORSMiddleware
 from model.base import Base
@@ -38,12 +35,6 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
 
 
-def load_rules():
-    with open("rule/grading_rule.txt", "r", encoding="utf-8", errors="ignore") as file:
-        return file.read()
-
-rules = load_rules()
-
 # for intialization testing
 @app.on_event("startup")
 async def on_startup():
@@ -54,38 +45,93 @@ def read_root():
     return {"Hello": "World"}
 
 
+
+ 
+# grading
+RULES_FILE = "rule/grading_rule.txt"
+ 
+ 
+def load_rules() -> str:
+    with open(RULES_FILE, "r", encoding="utf-8", errors="ignore") as f:
+        return f.read()
+ 
+rules = load_rules()
+ 
 @app.post("/grading")
 async def grading_endpoint(
     marks: int = Form(10),
-    text: Optional[str] = Form(None),
+    text: Optional[str] = Form(None),                  
+ 
+    # ── Answer sheet images (required: at least one) ──────────────────────────
     image1: Optional[UploadFile] = File(None),
     image2: Optional[UploadFile] = File(None),
     image3: Optional[UploadFile] = File(None),
     image4: Optional[UploadFile] = File(None),
+ 
+    # ── Question paper images (required: at least one) ────────────────────────
+    qimage1: Optional[UploadFile] = File(None),
+    qimage2: Optional[UploadFile] = File(None),
+    qimage3: Optional[UploadFile] = File(None),
+    qimage4: Optional[UploadFile] = File(None),
 ):
     async def read(f: Optional[UploadFile]) -> Optional[bytes]:
         return await f.read() if f else None
-
-    img1, img2, img3, img4 = (
+ 
+    # ── Validate: question paper is now required ───────────────────────────────
+    if not any([qimage1, qimage2, qimage3, qimage4]):
+        raise HTTPException(
+            status_code=422,
+            detail="Question paper is required. Please upload at least one question paper image.",
+        )
+ 
+    # ── Validate: answer sheet is required ────────────────────────────────────
+    if not any([image1, image2, image3, image4]):
+        raise HTTPException(
+            status_code=422,
+            detail="Answer sheet is required. Please upload at least one answer sheet image.",
+        )
+ 
+    # ── Read all images concurrently ──────────────────────────────────────────
+    (
+        img1, img2, img3, img4,
+        qimg1, qimg2, qimg3, qimg4,
+    ) = (
         await read(image1),
         await read(image2),
         await read(image3),
         await read(image4),
+        await read(qimage1),
+        await read(qimage2),
+        await read(qimage3),
+        await read(qimage4),
     )
+ 
 
+    # ── Build effective rules: base rules + custom on top ─────────────────────
+    effective_rules = rules
+    if text and text.strip():
+        effective_rules = (
+            f"{rules}\n\n"
+            f"=== CUSTOM INSTRUCTOR RULES (HIGHEST PRIORITY) ===\n"
+            f"{text.strip()}\n"
+            f"=== END CUSTOM RULES ==="
+        )
+ 
     response = await generate_grading_response(
+        # answer sheets
         image1=img1,
         image2=img2,
         image3=img3,
         image4=img4,
-        text=text,
-        rules=rules,
+        # question paper
+        qimage1=qimg1,
+        qimage2=qimg2,
+        qimage3=qimg3,
+        qimage4=qimg4,
+        rules=effective_rules,
         mark=marks,
     )
-
-    # Strip markdown fences if Gemini wraps the JSON
+ 
     cleaned = re.sub(r"^```(?:json)?\s*|\s*```$", "", response.strip())
-    
-    # Parse and return as a proper JSON object (not a string)
     parsed = json.loads(cleaned)
     return parsed

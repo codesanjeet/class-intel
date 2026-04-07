@@ -9,7 +9,6 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
-# ── System Prompt (injected as rules, matching your grading pattern) ───────────
 ANALYTICS_RULES = """
 You are EduAnalytics AI — an expert academic performance analyst embedded in a school management system.
 You receive structured JSON data about a student or class and return precise, actionable JSON insights.

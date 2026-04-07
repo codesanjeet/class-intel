@@ -14,7 +14,6 @@ genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
 
 _MODEL = "gemini-2.5-flash"
 
-
 def _bytes_to_pil(image_bytes: bytes) -> Image.Image:
     return Image.open(io.BytesIO(image_bytes))
 
@@ -24,12 +23,12 @@ You are an expert curriculum designer. Generate a complete, structured lesson pl
 
 Return ONLY a raw JSON object (no markdown fences, no extra text) with this exact shape:
 
-{
+{{
   "subject": "<subject name or null>",
   "topic": "<primary topic title>",
   "className": "<class/grade or null>",
   "lessonContent": [
-    {
+    {{
       "topic": "<topic title>",
       "estimated_duration_minutes": <integer>,
       "difficulty_level": "<easy|intermediate|hard>",
@@ -43,10 +42,10 @@ Return ONLY a raw JSON object (no markdown fences, no extra text) with this exac
       "teaching_tip": "<tip for the teacher>",
       "common_mistakes": ["<mistake>"],
       "pyq_alignment": ["<past year question reference>"]
-    }
+    }}
   ],
   "quiz": [
-    {
+    {{
       "topic": "<topic title>",
       "question": "<MCQ question>",
       "options": ["<A>", "<B>", "<C>", "<D>"],
@@ -54,11 +53,68 @@ Return ONLY a raw JSON object (no markdown fences, no extra text) with this exac
       "explanation": "<brief explanation>",
       "difficulty": "<easy|medium|hard>",
       "marks": <1|2|3>
-    }
+    }}
   ]
-}
+}}
 
 Rules:
+- lessonContent is ALWAYS an array, even for a single topic.
+- For a full syllabus, produce one lessonContent object per topic.
+- Quiz must have at least 3 questions per topic.
+- pyq_alignment: if PYQ images provided, reference them. Otherwise leave as [].
+- Never add markdown, code fences, or commentary outside the JSON.
+""".strip()
+
+
+_LESSON_PROMPT_WITH_RULES = """
+You are an expert curriculum designer. Generate a complete, structured lesson plan.
+
+══════════════════════════════════════════════════
+INSTITUTION-SPECIFIC RULES — HIGHEST PRIORITY
+These rules override all defaults. Follow them strictly and precisely.
+
+{user_defined_rule}
+
+══════════════════════════════════════════════════
+
+Return ONLY a raw JSON object (no markdown fences, no extra text) with this exact shape:
+
+{{
+  "subject": "<subject name or null>",
+  "topic": "<primary topic title>",
+  "className": "<class/grade or null>",
+  "lessonContent": [
+    {{
+      "topic": "<topic title>",
+      "estimated_duration_minutes": <integer>,
+      "difficulty_level": "<easy|intermediate|hard>",
+      "tags": ["<tag>"],
+      "prerequisites": ["<prerequisite>"],
+      "objectives": ["<learning objective>"],
+      "teaching_steps": ["<step description>"],
+      "activities": ["<activity>"],
+      "homework": ["<homework item>"],
+      "revision_note": "<common misconception or revision note>",
+      "teaching_tip": "<tip for the teacher>",
+      "common_mistakes": ["<mistake>"],
+      "pyq_alignment": ["<past year question reference>"]
+    }}
+  ],
+  "quiz": [
+    {{
+      "topic": "<topic title>",
+      "question": "<MCQ question>",
+      "options": ["<A>", "<B>", "<C>", "<D>"],
+      "answer": "<correct option text>",
+      "explanation": "<brief explanation>",
+      "difficulty": "<easy|medium|hard>",
+      "marks": <1|2|3>
+    }}
+  ]
+}}
+
+Rules:
+- ALWAYS honour the institution-specific rules above first — timing, credit hours, sequencing, etc.
 - lessonContent is ALWAYS an array, even for a single topic.
 - For a full syllabus, produce one lessonContent object per topic.
 - Quiz must have at least 3 questions per topic.
@@ -128,25 +184,54 @@ async def generate_lesson_plan(
     subject: Optional[str] = None,
     class_name: Optional[str] = None,
     topic_text: Optional[str] = None,
+    user_defined_rule: Optional[str] = None,
+    # Topic images — up to 8
     topic_image_1: Optional[bytes] = None,
     topic_image_2: Optional[bytes] = None,
     topic_image_3: Optional[bytes] = None,
     topic_image_4: Optional[bytes] = None,
+    topic_image_5: Optional[bytes] = None,
+    topic_image_6: Optional[bytes] = None,
+    topic_image_7: Optional[bytes] = None,
+    topic_image_8: Optional[bytes] = None,
+    # PYQ images — up to 8
     pyq_image_1: Optional[bytes] = None,
     pyq_image_2: Optional[bytes] = None,
     pyq_image_3: Optional[bytes] = None,
     pyq_image_4: Optional[bytes] = None,
+    pyq_image_5: Optional[bytes] = None,
+    pyq_image_6: Optional[bytes] = None,
+    pyq_image_7: Optional[bytes] = None,
+    pyq_image_8: Optional[bytes] = None,
 ) -> dict:
-    parts: list = [_LESSON_PROMPT]
+    # Choose prompt — inject user rules at highest priority if provided
+    if user_defined_rule and user_defined_rule.strip():
+        base_prompt = _LESSON_PROMPT_WITH_RULES.format(
+            user_defined_rule=user_defined_rule.strip()
+        )
+    else:
+        base_prompt = _LESSON_PROMPT
+
+    parts: list = [base_prompt]
+
     lines = []
     if subject:    lines.append(f"Subject: {subject}")
     if class_name: lines.append(f"Class: {class_name}")
     if topic_text: lines.append(f"Topic / Syllabus:\n{topic_text}")
     if lines:      parts.append("\n".join(lines))
 
+    topic_imgs = [
+        topic_image_1, topic_image_2, topic_image_3, topic_image_4,
+        topic_image_5, topic_image_6, topic_image_7, topic_image_8,
+    ]
+    pyq_imgs = [
+        pyq_image_1, pyq_image_2, pyq_image_3, pyq_image_4,
+        pyq_image_5, pyq_image_6, pyq_image_7, pyq_image_8,
+    ]
+
     for label, imgs in [
-        ("The following images show the topic/syllabus pages to teach:", [topic_image_1, topic_image_2, topic_image_3, topic_image_4]),
-        ("The following images are previous year exam questions (PYQs).", [pyq_image_1, pyq_image_2, pyq_image_3, pyq_image_4]),
+        ("The following images show the topic/syllabus pages to teach:", topic_imgs),
+        ("The following images are previous year exam questions (PYQs).", pyq_imgs),
     ]:
         valid = [b for b in imgs if b]
         if valid:

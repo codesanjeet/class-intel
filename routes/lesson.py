@@ -4,7 +4,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select,desc
+from sqlalchemy import select, desc
 
 from core.db import get_db
 from model.lesson_model import Lesson
@@ -54,21 +54,35 @@ class SimulateResponse(BaseModel):
 
 @router.post("", response_model=LessonResponse)
 async def create_lesson(
-    subject:       Optional[str]        = Form(None),
-    class_name:    Optional[str]        = Form(None),
-    topic:         Optional[str]        = Form(None),
-    topic_image_1: Optional[UploadFile] = File(None),
-    topic_image_2: Optional[UploadFile] = File(None),
-    topic_image_3: Optional[UploadFile] = File(None),
-    topic_image_4: Optional[UploadFile] = File(None),
-    pyq_image_1:   Optional[UploadFile] = File(None),
-    pyq_image_2:   Optional[UploadFile] = File(None),
-    pyq_image_3:   Optional[UploadFile] = File(None),
-    pyq_image_4:   Optional[UploadFile] = File(None),
+    user_defined_rule: Optional[str]        = Form(None),
+    subject:           Optional[str]        = Form(None),
+    class_name:        Optional[str]        = Form(None),
+    topic:             Optional[str]        = Form(None),
+    # Topic images — up to 8
+    topic_image_1:     Optional[UploadFile] = File(None),
+    topic_image_2:     Optional[UploadFile] = File(None),
+    topic_image_3:     Optional[UploadFile] = File(None),
+    topic_image_4:     Optional[UploadFile] = File(None),
+    topic_image_5:     Optional[UploadFile] = File(None),
+    topic_image_6:     Optional[UploadFile] = File(None),
+    topic_image_7:     Optional[UploadFile] = File(None),
+    topic_image_8:     Optional[UploadFile] = File(None),
+    # PYQ images — up to 8
+    pyq_image_1:       Optional[UploadFile] = File(None),
+    pyq_image_2:       Optional[UploadFile] = File(None),
+    pyq_image_3:       Optional[UploadFile] = File(None),
+    pyq_image_4:       Optional[UploadFile] = File(None),
+    pyq_image_5:       Optional[UploadFile] = File(None),
+    pyq_image_6:       Optional[UploadFile] = File(None),
+    pyq_image_7:       Optional[UploadFile] = File(None),
+    pyq_image_8:       Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
 ):
     has_text   = bool(topic and topic.strip())
-    has_images = any(img is not None for img in [topic_image_1, topic_image_2, topic_image_3, topic_image_4])
+    has_images = any(img is not None for img in [
+        topic_image_1, topic_image_2, topic_image_3, topic_image_4,
+        topic_image_5, topic_image_6, topic_image_7, topic_image_8,
+    ])
     if not has_text and not has_images:
         raise HTTPException(status_code=422, detail="Provide at least a topic text or one topic image.")
 
@@ -77,14 +91,21 @@ async def create_lesson(
         c = await u.read()
         return c if c else None
 
-    t1,t2,t3,t4 = await _read(topic_image_1),await _read(topic_image_2),await _read(topic_image_3),await _read(topic_image_4)
-    p1,p2,p3,p4 = await _read(pyq_image_1),  await _read(pyq_image_2),  await _read(pyq_image_3),  await _read(pyq_image_4)
+    t1, t2, t3, t4 = await _read(topic_image_1), await _read(topic_image_2), await _read(topic_image_3), await _read(topic_image_4)
+    t5, t6, t7, t8 = await _read(topic_image_5), await _read(topic_image_6), await _read(topic_image_7), await _read(topic_image_8)
+    p1, p2, p3, p4 = await _read(pyq_image_1),   await _read(pyq_image_2),   await _read(pyq_image_3),   await _read(pyq_image_4)
+    p5, p6, p7, p8 = await _read(pyq_image_5),   await _read(pyq_image_6),   await _read(pyq_image_7),   await _read(pyq_image_8)
 
     try:
         result = await generate_lesson_plan(
-            subject=subject, class_name=class_name, topic_text=topic,
+            subject=subject,
+            class_name=class_name,
+            topic_text=topic,
+            user_defined_rule=user_defined_rule,
             topic_image_1=t1, topic_image_2=t2, topic_image_3=t3, topic_image_4=t4,
+            topic_image_5=t5, topic_image_6=t6, topic_image_7=t7, topic_image_8=t8,
             pyq_image_1=p1,   pyq_image_2=p2,   pyq_image_3=p3,   pyq_image_4=p4,
+            pyq_image_5=p5,   pyq_image_6=p6,   pyq_image_7=p7,   pyq_image_8=p8,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"AI generation failed: {e}")
