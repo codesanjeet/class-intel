@@ -518,17 +518,23 @@ function StudentRow({ student, classData, onInsight }: { student: Student; class
           {scoreLabel(student.score)}
         </span>
       </td>
-      <td style={{ padding:"13px 20px" }}>
-        <button onClick={onInsight} style={{
-          fontSize:12, fontWeight:700, padding:"6px 13px", borderRadius:8,
-          border:`1.5px solid ${classData.color}28`, cursor:"pointer",
-          background:`${classData.color}08`, color:classData.color,
-          display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap",
-          fontFamily:"inherit", transition:"all 0.15s", letterSpacing:"-0.01em"
-        }}
+      {/* ── Analyse button cell ── */}
+      <td style={{ padding:"13px 12px 13px 4px" }}>
+        <button
+          onClick={onInsight}
+          className="ci-analyse-btn"
+          style={{
+            fontSize:12, fontWeight:700, padding:"6px 13px", borderRadius:8,
+            border:`1.5px solid ${classData.color}28`, cursor:"pointer",
+            background:`${classData.color}08`, color:classData.color,
+            display:"flex", alignItems:"center", gap:5, whiteSpace:"nowrap",
+            fontFamily:"inherit", transition:"all 0.15s", letterSpacing:"-0.01em",
+          }}
           onMouseEnter={e => { e.currentTarget.style.background=`${classData.color}16`; e.currentTarget.style.transform="translateY(-1px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background=`${classData.color}08`; e.currentTarget.style.transform="translateY(0)"; }}>
-          <RiSparklingFill size={11}/> Analyse
+          onMouseLeave={e => { e.currentTarget.style.background=`${classData.color}08`; e.currentTarget.style.transform="translateY(0)"; }}
+        >
+          <RiSparklingFill size={11}/>
+          <span className="ci-analyse-label"> Analyse</span>
         </button>
       </td>
     </tr>
@@ -667,6 +673,13 @@ export default function AnalyticsPanel() {
         .ci-header-inner { padding:0 28px; height:62px; display:flex; align-items:center; justify-content:space-between; gap:16px; }
         @media(max-width:860px) { .ci-header-inner { padding:0 16px; } }
 
+        /* ── FIX 1: shrink header title on small screens ── */
+        @media(max-width:480px) {
+          .ci-header-inner { height:54px; gap:8px; }
+          .ci-header-title.syne { font-size:13px !important; }
+          .ci-header-sub { font-size:10px !important; }
+        }
+
         .ci-content { padding:24px 28px 80px; width:100%; }
         @media(max-width:600px) { .ci-content { padding:16px 14px 80px; } }
 
@@ -696,9 +709,16 @@ export default function AnalyticsPanel() {
         .ci-search { width:190px; padding:8px 12px 8px 34px; border-radius:9px; border:1.5px solid #e5e7eb; background:#f9fafb; font-size:13px; color:#111827; transition:all 0.15s; letter-spacing:-0.01em; font-family:inherit; }
         .ci-search:focus { border-color:var(--accent,#2563eb); background:#fff; box-shadow:0 0 0 3px rgba(37,99,235,0.08); }
         .ci-search::placeholder { color:#9ca3af; }
+        @media(max-width:400px) { .ci-search { width:140px; } }
 
-        .ci-ai-btn { border:none; cursor:pointer; padding:8px 16px; border-radius:9px; font-size:13px; font-weight:800; display:flex; align-items:center; gap:6px; color:#fff; transition:all 0.15s; letter-spacing:-0.01em; font-family:'Syne',sans-serif; }
+        .ci-ai-btn { border:none; cursor:pointer; padding:8px 16px; border-radius:9px; font-size:13px; font-weight:800; display:flex; align-items:center; gap:6px; color:#fff; transition:all 0.15s; letter-spacing:-0.01em; font-family:'Syne',sans-serif; white-space:nowrap; }
         .ci-ai-btn:hover { opacity:0.88; transform:translateY(-1px); }
+
+        /* ── FIX 2: shrink AI Analysis button text on very small screens ── */
+        @media(max-width:400px) {
+          .ci-ai-btn { padding:7px 10px; font-size:12px; gap:4px; }
+          .ci-ai-btn-label { display:none; }
+        }
 
         .ci-class-btn { width:100%; text-align:left; padding:10px 10px; border-radius:10px; cursor:pointer; border:1.5px solid transparent; transition:all 0.15s; font-family:inherit; background:transparent; }
         .ci-class-btn:hover { background:#f8fafc; border-color:#e5e7eb; }
@@ -713,6 +733,13 @@ export default function AnalyticsPanel() {
         @media(max-width:860px) { .ci-overlay { display:block; } }
 
         .anim-up { animation:slideUp 0.28s ease; }
+
+        /* ── FIX 3: Analyse button — icon-only on small screens ── */
+        .ci-analyse-btn { flex-shrink:0; }
+        @media(max-width:560px) {
+          .ci-analyse-btn { padding:6px 8px !important; gap:0 !important; }
+          .ci-analyse-label { display:none; }
+        }
       `}</style>
 
       <div className="ci-root">
@@ -773,27 +800,30 @@ export default function AnalyticsPanel() {
         <div className="ci-main">
           <header className="ci-header">
             <div className="ci-header-inner">
-              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                <button className="ci-hamburger" onClick={() => setSidebarOpen(true)} style={{ width:34, height:34, border:"1.5px solid #e5e7eb", borderRadius:8, background:"#f9fafb", color:"#6b7280", cursor:"pointer", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12, minWidth:0, flex:1 }}>
+                <button className="ci-hamburger" onClick={() => setSidebarOpen(true)} style={{ width:34, height:34, border:"1.5px solid #e5e7eb", borderRadius:8, background:"#f9fafb", color:"#6b7280", cursor:"pointer", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                   <RiMenuLine size={15}/>
                 </button>
-                <div>
+                <div style={{ minWidth:0 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                    <span style={{ fontSize:11, fontWeight:700, color:cls.color }}>{cls.subject}</span>
+                    <span className="ci-header-sub" style={{ fontSize:11, fontWeight:700, color:cls.color }}>{cls.subject}</span>
                     <span style={{ fontSize:11, color:"#d1d5db" }}>·</span>
-                    <span style={{ fontSize:11, color:"#9ca3af", fontWeight:600 }}>{cls.teacher}</span>
+                    <span className="ci-header-sub" style={{ fontSize:11, color:"#9ca3af", fontWeight:600 }}>{cls.teacher}</span>
                   </div>
-                  <h2 className="syne" style={{ fontSize:17, fontWeight:800, color:"#111827", letterSpacing:"-0.04em", marginTop:1 }}>{cls.name}</h2>
+                  <h2 className="ci-header-title syne" style={{ fontSize:17, fontWeight:800, color:"#111827", letterSpacing:"-0.04em", marginTop:1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                    {cls.name}
+                  </h2>
                 </div>
               </div>
 
-              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:12, flexShrink:0 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:6 }}>
                   <span className="ci-live-dot"/>
                   <span style={{ fontSize:11, color:"#6b7280", fontWeight:600 }}>Live</span>
                 </div>
                 <button className="ci-ai-btn" style={{ background:cls.color, boxShadow:`0 4px 14px ${cls.color}40` }} onClick={openClassInsight}>
-                  <RiSparklingFill size={12}/> AI Analysis
+                  <RiSparklingFill size={12}/>
+                  <span className="ci-ai-btn-label">AI Analysis</span>
                 </button>
               </div>
             </div>
@@ -814,7 +844,7 @@ export default function AnalyticsPanel() {
                       {k.icon}
                     </div>
                   </div>
-                  <p className="syne" style={{ fontSize:28, fontWeight:800, color:"#111827", lineHeight:1, letterSpacing:"-0.04em" }}>{k.value}</p>
+                  <p className="syne" style={{ fontSize:22, fontWeight:800, color:"#111827", lineHeight:1, letterSpacing:"-0.04em" }}>{k.value}</p>
                   <p style={{ fontSize:11, color:"#9ca3af", marginTop:7, fontWeight:600 }}>{k.sub}</p>
                   <div style={{ height:3, borderRadius:99, background:"#f1f5f9", marginTop:14, overflow:"hidden" }}>
                     <div style={{ width:`${Math.min(parseFloat(k.value) * 10, 100)}%`, height:"100%", background:k.color, borderRadius:99, opacity:0.65 }}/>
@@ -842,7 +872,7 @@ export default function AnalyticsPanel() {
                     { label:"Top Performers", val:topCount,     color:"#059669" },
                   ].map((s, i) => (
                     <div key={i} className="ci-card" style={{ padding:"16px 18px", textAlign:"center" }}>
-                      <p className="syne" style={{ fontSize:26, fontWeight:800, color:s.color, lineHeight:1, letterSpacing:"-0.04em" }}>{s.val}</p>
+                      <p className="syne" style={{ fontSize:20, fontWeight:800, color:s.color, lineHeight:1, letterSpacing:"-0.04em" }}>{s.val}</p>
                       <p style={{ fontSize:10, color:"#6b7280", fontWeight:800, marginTop:8, letterSpacing:"0.1em", textTransform:"uppercase" }}>{s.label}</p>
                     </div>
                   ))}
@@ -997,7 +1027,8 @@ export default function AnalyticsPanel() {
                     Focused remediation on <span style={{ color:"#dc2626", fontWeight:700 }}>{cls.weakTopic}</span> could unlock the most growth. Run a full AI analysis for personalised strategies.
                   </p>
                   <button className="ci-ai-btn" style={{ background:cls.color, boxShadow:`0 4px 14px ${cls.color}40` }} onClick={openClassInsight}>
-                    <RiSparklingFill size={12}/> Run Full AI Analysis
+                    <RiSparklingFill size={12}/>
+                    <span className="ci-ai-btn-label">Run Full AI Analysis</span>
                   </button>
                 </div>
               </div>
