@@ -35,19 +35,17 @@ async def init_db():
         await conn.run_sync(Base.metadata.create_all)
 
 
-# for intialization testing
-@app.on_event("startup")
-async def on_startup():
-    await init_db()
+# # for intialization testing
+# @app.on_event("startup")
+# async def on_startup():
+#     await init_db()
 
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
 
-
- 
-# grading
+# grading routes and realted logic
 RULES_FILE = "rule/grading_rule.txt"
  
  

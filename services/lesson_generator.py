@@ -60,7 +60,7 @@ Return ONLY a raw JSON object (no markdown fences, no extra text) with this exac
 Rules:
 - lessonContent is ALWAYS an array, even for a single topic.
 - For a full syllabus, produce one lessonContent object per topic.
-- Quiz must have at least 3 questions per topic.
+- Quiz must have at least 3 questions per topic and not always only 3 it cna be 5 , 8 according to need.
 - pyq_alignment: if PYQ images provided, reference them. Otherwise leave as [].
 - Never add markdown, code fences, or commentary outside the JSON.
 """.strip()
