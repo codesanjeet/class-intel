@@ -1,4 +1,4 @@
-# Class-Intel
+# Class-Intel (build during hackathon)
 
 Class-Intel is an AI-powered classroom and education platform built to provide intelligent learning features using modern web technologies and Generative AI.
 
